@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0B6B4F">
+<title>NutStock — جرد أدوية التغذية</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0E1F1A; --muted:#5C7168; --line:#DCE4E1; --bg:#EEF2F0; --surface:#FFFFFF;
+  --brand:#0B6B4F; --brand-soft:#E3F1EB; --info:#1F5C8C; --info-soft:#E4EDF5;
+  --warn:#A85B00; --warn-soft:#FBEEDC; --danger:#B3261E; --danger-soft:#FBE7E5;
+  --r:14px; --sh:0 1px 2px rgba(14,31,26,.06), 0 6px 18px rgba(14,31,26,.05);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:"IBM Plex Sans Arabic",system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:15px; line-height:1.6; -webkit-font-smoothing:antialiased;
+}
+.num{font-family:"IBM Plex Mono",ui-monospace,monospace; font-variant-numeric:tabular-nums; letter-spacing:-.02em; direction:ltr; display:inline-block}
+button{font-family:inherit}
+input,select,textarea{font-family:inherit;font-size:15px}
+
+/* ---------- shell ---------- */
+.app{max-width:640px;margin:0 auto;min-height:100vh;padding-bottom:82px}
+.topbar{position:sticky;top:0;z-index:30;background:var(--surface);border-bottom:1px solid var(--line);padding:10px 16px;display:flex;align-items:center;gap:10px}
+.brandmark{width:34px;height:34px;border-radius:10px;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:700;font-size:13px;flex:none}
+.topbar .who{flex:1;min-width:0}
+.topbar .who b{display:block;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar .who span{display:block;font-size:12px;color:var(--muted)}
+.iconbtn{border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:10px;padding:7px 10px;font-size:13px;cursor:pointer}
+.iconbtn:active{background:var(--bg)}
+.page{padding:16px}
+.nav{position:fixed;bottom:0;left:0;right:0;z-index:30;background:var(--surface);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom));display:flex}
+.nav-in{max-width:640px;margin:0 auto;display:flex;width:100%}
+.nav button{flex:1;min-width:0;border:0;background:none;padding:7px 1px;border-radius:12px;color:var(--muted);font-size:10.5px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;white-space:nowrap}
+.nav button .ic{font-size:18px;line-height:1}
+.nav button[data-on="1"]{color:var(--brand);background:var(--brand-soft)}
+
+/* ---------- type ---------- */
+h1{font-size:19px;margin:0 0 2px;font-weight:700;letter-spacing:-.01em}
+h2{font-size:15px;margin:0 0 10px;font-weight:600}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;margin:0 0 14px}
+.sub{color:var(--muted);font-size:13px;margin:0 0 16px}
+
+/* ---------- cards ---------- */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:12px;box-shadow:var(--sh)}
+.card.tight{padding:12px}
+.row{display:flex;align-items:center;gap:10px}
+.row.between{justify-content:space-between}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px}
+.stat .k{font-size:11.5px;color:var(--muted);font-weight:600}
+.stat .v{font-size:22px;font-weight:700;margin-top:2px}
+
+/* ---------- stock rows (signature) ---------- */
+.item{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;margin-bottom:8px;box-shadow:var(--sh)}
+.item .head{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.item .nm{font-weight:600;font-size:14.5px}
+.item .qt{font-size:19px;font-weight:600}
+.item .unit{font-size:11px;color:var(--muted);font-weight:500;margin-inline-start:4px;font-family:"IBM Plex Sans Arabic",sans-serif}
+.bar{display:flex;height:6px;border-radius:99px;overflow:hidden;background:var(--line);margin-top:9px}
+.bar i{display:block;height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;font-size:11.5px;color:var(--muted)}
+.legend b{font-weight:600;color:var(--ink)}
+.dot{width:8px;height:8px;border-radius:3px;display:inline-block;margin-inline-end:4px;vertical-align:middle}
+.breakdown{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);display:grid;gap:6px}
+.breakdown div{display:flex;justify-content:space-between;font-size:13px}
+.breakdown span{color:var(--muted)}
+
+/* ---------- forms ---------- */
+label{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin:0 0 5px}
+.field{margin-bottom:12px}
+input,select,textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:11px;background:var(--surface);color:var(--ink);outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+textarea{min-height:66px;resize:vertical}
+.btn{display:block;width:100%;padding:13px;border:0;border-radius:12px;background:var(--brand);color:#fff;font-weight:700;font-size:15px;cursor:pointer}
+.btn:disabled{opacity:.55}
+.btn.info{background:var(--info)} .btn.danger{background:var(--danger)} .btn.warn{background:var(--warn)}
+.btn.ghost{background:var(--surface);color:var(--ink);border:1px solid var(--line);font-weight:600}
+.btn.sm{padding:9px;font-size:13.5px;width:auto;padding-inline:14px}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:99px;font-size:11.5px;font-weight:600;background:var(--bg);color:var(--muted)}
+.pill.brand{background:var(--brand-soft);color:var(--brand)}
+.pill.info{background:var(--info-soft);color:var(--info)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.danger{background:var(--danger-soft);color:var(--danger)}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:10px;margin-bottom:4px;-webkit-overflow-scrolling:touch}
+.tabs button{flex:none;border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:99px;padding:7px 13px;font-size:13px;font-weight:600;cursor:pointer}
+.tabs button[data-on="1"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.msg{padding:10px 12px;border-radius:11px;font-size:13.5px;margin-bottom:12px;font-weight:500}
+.msg.err{background:var(--danger-soft);color:var(--danger)}
+.msg.ok{background:var(--brand-soft);color:var(--brand)}
+.empty{text-align:center;padding:34px 18px;color:var(--muted);font-size:13.5px}
+.empty b{display:block;color:var(--ink);font-size:15px;margin-bottom:4px}
+
+/* ---------- log ---------- */
+.tx{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px 13px;margin-bottom:7px}
+.tx .l1{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.tx .l2{font-size:12px;color:var(--muted);margin-top:4px;display:flex;justify-content:space-between;gap:8px}
+.tx .nm{font-weight:600;font-size:14px}
+.tx .q{font-weight:600;font-size:15px}
+
+/* ---------- table ---------- */
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:13px;white-space:nowrap}
+th,td{padding:9px 11px;border-bottom:1px solid var(--line);text-align:start}
+th{background:var(--bg);font-size:11.5px;font-weight:600;color:var(--muted);position:sticky;top:0}
+td.n{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;direction:ltr;text-align:end}
+tbody tr:last-child td{border-bottom:0}
+
+/* ---------- login ---------- */
+.login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:22px}
+.login .box{width:100%;max-width:380px}
+.login .logo{width:56px;height:56px;border-radius:17px;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:700;font-size:19px;margin:0 auto 14px}
+.login h1{text-align:center;font-size:22px}
+.login .sub{text-align:center}
+.center{text-align:center}
+.toast{position:fixed;bottom:92px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 18px;border-radius:99px;font-size:13.5px;font-weight:600;z-index:60;box-shadow:0 8px 24px rgba(0,0,0,.2);max-width:90vw;text-align:center}
+.spin{width:26px;height:26px;border:3px solid var(--line);border-top-color:var(--brand);border-radius:50%;animation:sp .8s linear infinite;margin:44px auto}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<script>
+/* ============================================================
+   NutStock — جرد أدوية التغذية
+   ضع بيانات مشروع Firebase هنا (Project settings > Your apps > Web)
+   ============================================================ */
+var firebaseConfig = {
+  apiKey: "AIzaSyDF_6zsmEaxCoz2HuMrFQ313IbT5kizD8k",
+  authDomain: "nutstock-c23aa.firebaseapp.com",
+  projectId: "nutstock-c23aa",
+  storageBucket: "nutstock-c23aa.firebasestorage.app",
+  messagingSenderId: "256268982553",
+  appId: "1:256268982553:web:f9f39ab6bafc0d206e0d88"
+};
+var ADMIN_EMAIL = "osamalubbad@gmail.com";   // هذا الحساب يصير أدمن تلقائياً
+/* ============================================================ */
+
+firebase.initializeApp(firebaseConfig);
+var auth = firebase.auth();
+var db = firebase.firestore();
+var secondaryApp = firebase.initializeApp(firebaseConfig, "secondary");
+var FieldValue = firebase.firestore.FieldValue;
+
+var h = React.createElement;
+var useState = React.useState, useEffect = React.useEffect, useMemo = React.useMemo;
+
+/* ---------- ثوابت ---------- */
+var SEED_COMMODITIES = [
+  {name:"RUIF", unit:"كرتونة"},
+  {name:"RUCF — فواكه", unit:"كرتونة"},
+  {name:"RUCF — خضار", unit:"كرتونة"},
+  {name:"RUCF — لحوم", unit:"كرتونة"},
+  {name:"LNS", unit:"كرتونة"},
+  {name:"RUTF", unit:"كرتونة"},
+  {name:"Super Cereal", unit:"كيس"},
+  {name:"BP5", unit:"كرتونة"},
+  {name:"HEB", unit:"كرتونة"},
+  {name:"MUAC — بالغين", unit:"شريط"},
+  {name:"MUAC — أطفال", unit:"شريط"},
+  {name:"MUAC — فوق 5 سنوات", unit:"شريط"}
+];
+var SEED_FACILITIES = [
+  {name:"المخزن الرئيسي", type:"warehouse"},
+  {name:"عيادة 1", type:"clinic"},
+  {name:"عيادة 2", type:"clinic"},
+  {name:"عيادة 3", type:"clinic"},
+  {name:"عيادة 4", type:"clinic"}
+];
+var TX = {
+  receive:   {label:"وارد",   cls:"brand",  sign:"+"},
+  distribute:{label:"توزيع",  cls:"info",   sign:"→"},
+  dispense:  {label:"صرف",    cls:"warn",   sign:"−"},
+  damage:    {label:"إتلاف",  cls:"danger", sign:"−"},
+  adjust:    {label:"تعديل جرد", cls:"", sign:"="}
+};
+var ROLE_LABEL = {admin:"أدمن", warehouse:"المخزن", clinic:"عيادة"};
+
+/* ---------- أدوات ---------- */
+function nf(n){ return new Intl.NumberFormat("en-US").format(Number(n)||0); }
+function pad(n){ return n<10 ? "0"+n : ""+n; }
+function fmtDate(ms){
+  if(!ms) return "—";
+  var d = new Date(ms);
+  return pad(d.getDate())+"/"+pad(d.getMonth()+1)+"/"+d.getFullYear()+" · "+pad(d.getHours())+":"+pad(d.getMinutes());
+}
+function stockId(f,c){ return f+"__"+c; }
+function errMsg(e){
+  var c = (e && e.code) || "";
+  if(c==="auth/invalid-credential"||c==="auth/wrong-password"||c==="auth/user-not-found") return "الإيميل أو كلمة المرور غير صحيحة";
+  if(c==="auth/invalid-email") return "صيغة الإيميل غير صحيحة";
+  if(c==="auth/too-many-requests") return "محاولات كثيرة. جرّب بعد شوي";
+  if(c==="auth/email-already-in-use") return "هذا الإيميل مستخدم من قبل";
+  if(c==="auth/weak-password") return "كلمة المرور لازم 6 خانات على الأقل";
+  if(c==="permission-denied") return "ما عندك صلاحية لهذه العملية";
+  if(c==="unavailable") return "لا يوجد اتصال بالإنترنت";
+  return (e && e.message) || "صار خطأ. جرّب مرة ثانية";
+}
+
+/* ---------- تسجيل حركة (ذرّية) ---------- */
+function recordMove(opts){
+  // {type, commodityId, qty, fromId, toId, note, by}
+  var qty = Number(opts.qty);
+  return db.runTransaction(function(t){
+    var fromRef = opts.fromId ? db.collection("stock").doc(stockId(opts.fromId, opts.commodityId)) : null;
+    var toRef   = opts.toId   ? db.collection("stock").doc(stockId(opts.toId,   opts.commodityId)) : null;
+    var reads = [ fromRef ? t.get(fromRef) : Promise.resolve(null), toRef ? t.get(toRef) : Promise.resolve(null) ];
+    return Promise.all(reads).then(function(r){
+      var fromSnap = r[0], toSnap = r[1];
+      var fromQty = (fromSnap && fromSnap.exists) ? (fromSnap.data().qty||0) : 0;
+      var toQty   = (toSnap   && toSnap.exists)   ? (toSnap.data().qty||0)   : 0;
+      if(fromRef && fromQty < qty) throw new Error("الرصيد غير كافٍ — المتوفر: "+nf(fromQty));
+      if(fromRef) t.set(fromRef, {facilityId:opts.fromId, commodityId:opts.commodityId, qty:fromQty-qty}, {merge:true});
+      if(toRef)   t.set(toRef,   {facilityId:opts.toId,   commodityId:opts.commodityId, qty:toQty+qty},   {merge:true});
+      t.set(db.collection("transactions").doc(), {
+        type:opts.type, commodityId:opts.commodityId, qty:qty,
+        fromId:opts.fromId||null, toId:opts.toId||null,
+        note:opts.note||"", byUid:opts.by.uid, byName:opts.by.name,
+        ts:FieldValue.serverTimestamp(), tsms:Date.now()
+      });
+    });
+  });
+}
+function setAbsolute(facilityId, commodityId, newQty, by, note){
+  return db.runTransaction(function(t){
+    var ref = db.collection("stock").doc(stockId(facilityId, commodityId));
+    return t.get(ref).then(function(s){
+      var prev = (s && s.exists) ? (s.data().qty||0) : 0;
+      t.set(ref, {facilityId:facilityId, commodityId:commodityId, qty:Number(newQty)}, {merge:true});
+      t.set(db.collection("transactions").doc(), {
+        type:"adjust", commodityId:commodityId, qty:Number(newQty), prevQty:prev,
+        fromId:null, toId:facilityId,
+        note:(note && note.trim() ? note.trim()+" — " : "")+"تعديل من "+nf(prev)+" إلى "+nf(newQty),
+        byUid:by.uid, byName:by.name, ts:FieldValue.serverTimestamp(), tsms:Date.now()
+      });
+    });
+  });
+}
+
+/* ============================ شاشة الدخول ============================ */
+function Login(){
+  var s1=useState(""), email=s1[0], setEmail=s1[1];
+  var s2=useState(""), pass=s2[0], setPass=s2[1];
+  var s3=useState(""), err=s3[0], setErr=s3[1];
+  var s4=useState(false), busy=s4[0], setBusy=s4[1];
+  var s5=useState(""), ok=s5[0], setOk=s5[1];
+
+  function submit(){
+    if(!email || !pass){ setErr("اكتب الإيميل وكلمة المرور"); return; }
+    setBusy(true); setErr(""); setOk("");
+    auth.signInWithEmailAndPassword(email.trim(), pass)
+      .catch(function(e){ setErr(errMsg(e)); setBusy(false); });
+  }
+  function reset(){
+    if(!email){ setErr("اكتب إيميلك أولاً حتى نبعت رابط التغيير"); return; }
+    auth.sendPasswordResetEmail(email.trim())
+      .then(function(){ setErr(""); setOk("بعتنا رابط تغيير كلمة المرور على إيميلك"); })
+      .catch(function(e){ setErr(errMsg(e)); });
+  }
+
+  return h("div",{className:"login"},
+    h("div",{className:"box"},
+      h("div",{className:"logo"},"NS"),
+      h("h1",null,"NutStock"),
+      h("p",{className:"sub"},"جرد أدوية التغذية — المخزن والعيادات"),
+      h("div",{className:"card"},
+        err ? h("div",{className:"msg err"},err) : null,
+        ok ? h("div",{className:"msg ok"},ok) : null,
+        h("div",{className:"field"},
+          h("label",null,"الإيميل"),
+          h("input",{type:"email",inputMode:"email",autoComplete:"username",value:email,
+            onChange:function(e){setEmail(e.target.value)},
+            onKeyDown:function(e){ if(e.key==="Enter") submit(); }})),
+        h("div",{className:"field"},
+          h("label",null,"كلمة المرور"),
+          h("input",{type:"password",autoComplete:"current-password",value:pass,
+            onChange:function(e){setPass(e.target.value)},
+            onKeyDown:function(e){ if(e.key==="Enter") submit(); }})),
+        h("button",{className:"btn",disabled:busy,onClick:submit}, busy?"جاري الدخول…":"دخول"),
+        h("p",{className:"center",style:{margin:"12px 0 0"}},
+          h("button",{className:"iconbtn",onClick:reset},"نسيت كلمة المرور"))
+      )
+    )
+  );
+}
+
+/* ============================ عرض الرصيد ============================ */
+function StockList(props){
+  var commodities = props.commodities, balances = props.balances, facilities = props.facilities;
+  var scope = props.scope; // facilityId أو "all"
+  var s=useState(null), open=s[0], setOpen=s[1];
+  var clinics = facilities.filter(function(f){return f.type==="clinic"});
+  var wh = facilities.filter(function(f){return f.type==="warehouse"});
+
+  if(!commodities.length) return h("div",{className:"empty"},h("b",null,"ما في أصناف بعد"),"الأدمن بيضيف الأصناف من صفحة الإدارة.");
+
+  return h("div",null, commodities.map(function(c){
+    var whQty=0, clQty=0, per=[];
+    if(scope==="all"){
+      wh.forEach(function(f){ var q=(balances[f.id]||{})[c.id]||0; whQty+=q; per.push({name:f.name,qty:q,color:"var(--brand)"}); });
+      clinics.forEach(function(f){ var q=(balances[f.id]||{})[c.id]||0; clQty+=q; per.push({name:f.name,qty:q,color:"var(--info)"}); });
+    } else {
+      whQty = (balances[scope]||{})[c.id]||0;
+    }
+    var total = whQty + clQty;
+    var isOpen = open===c.id;
+    return h("div",{className:"item",key:c.id,onClick:function(){ setOpen(isOpen?null:c.id) }},
+      h("div",{className:"head"},
+        h("div",{className:"nm"},c.name),
+        h("div",{className:"qt"}, h("span",{className:"num"},nf(total)), h("span",{className:"unit"},c.unit))
+      ),
+      scope==="all" ? h("div",{className:"bar"},
+        h("i",{style:{width:(total? (whQty/total*100):0)+"%",background:"var(--brand)"}}),
+        h("i",{style:{width:(total? (clQty/total*100):0)+"%",background:"var(--info)"}})
+      ) : null,
+      scope==="all" ? h("div",{className:"legend"},
+        h("span",null,h("i",{className:"dot",style:{background:"var(--brand)"}}),"المخزن ",h("b",{className:"num"},nf(whQty))),
+        h("span",null,h("i",{className:"dot",style:{background:"var(--info)"}}),"العيادات ",h("b",{className:"num"},nf(clQty)))
+      ) : null,
+      (isOpen && scope==="all") ? h("div",{className:"breakdown"}, per.map(function(p,i){
+        return h("div",{key:i}, h("span",null,p.name), h("b",{className:"num"},nf(p.qty)));
+      })) : null
+    );
+  }));
+}
+
+/* ============================ نموذج حركة ============================ */
+function MoveForm(props){
+  // type, fromId, commodities, facilities(للتوزيع), balances, me
+  var t = props.type;
+  var s1=useState(""), cid=s1[0], setCid=s1[1];
+  var s2=useState(""), qty=s2[0], setQty=s2[1];
+  var s3=useState(""), dest=s3[0], setDest=s3[1];
+  var s4=useState(""), note=s4[0], setNote=s4[1];
+  var s5=useState(""), err=s5[0], setErr=s5[1];
+  var s6=useState(false), busy=s6[0], setBusy=s6[1];
+
+  var clinics = (props.facilities||[]).filter(function(f){return f.type==="clinic" && f.active!==false});
+  var avail = cid && props.fromId ? ((props.balances[props.fromId]||{})[cid]||0) : null;
+  var conf = {
+    receive:   {title:"تسجيل وارد للمخزن", btn:"تسجيل الوارد", cls:"", noteLabel:"المصدر / رقم البيان"},
+    distribute:{title:"توزيع على عيادة",    btn:"تأكيد التوزيع", cls:"info", noteLabel:"ملاحظة (اختياري)"},
+    dispense:  {title:"صرف للمستفيدين",     btn:"تسجيل الصرف",  cls:"warn", noteLabel:"ملاحظة (اختياري)"},
+    damage:    {title:"تسجيل إتلاف",        btn:"تسجيل الإتلاف",cls:"danger", noteLabel:"سبب الإتلاف"}
+  }[t];
+
+  function submit(){
+    var q = Number(qty);
+    if(!cid){ setErr("اختر الصنف"); return; }
+    if(!q || q<=0){ setErr("اكتب كمية صحيحة"); return; }
+    if(t==="distribute" && !dest){ setErr("اختر العيادة"); return; }
+    if(t==="damage" && !note.trim()){ setErr("اكتب سبب الإتلاف"); return; }
+    setBusy(true); setErr("");
+    recordMove({
+      type:t, commodityId:cid, qty:q,
+      fromId: t==="receive" ? null : props.fromId,
+      toId:   t==="receive" ? props.fromId : (t==="distribute" ? dest : null),
+      note:note.trim(), by:props.me
+    }).then(function(){
+      setQty(""); setNote(""); setBusy(false);
+      props.onDone(conf.btn.replace("تأكيد ","").replace("تسجيل ","")+" تم بنجاح");
+    }).catch(function(e){ setErr(errMsg(e)); setBusy(false); });
+  }
+
+  return h("div",null,
+    h("h1",null,conf.title),
+    h("p",{className:"sub"}, t==="receive" ? "الكمية بتزيد على رصيد المخزن." :
+      t==="distribute" ? "بتنزل من المخزن وبتزيد عند العيادة مباشرة." :
+      "الكمية بتنقص من رصيد العيادة."),
+    h("div",{className:"card"},
+      err ? h("div",{className:"msg err"},err) : null,
+      h("div",{className:"field"},
+        h("label",null,"الصنف"),
+        h("select",{value:cid,onChange:function(e){setCid(e.target.value)}},
+          h("option",{value:""},"— اختر الصنف —"),
+          props.commodities.map(function(c){ return h("option",{key:c.id,value:c.id},c.name) })
+        ),
+        avail!==null ? h("p",{style:{margin:"6px 2px 0",fontSize:"12.5px",color:"var(--muted)"}},
+          "المتوفر حالياً: ", h("b",{className:"num"},nf(avail))) : null
+      ),
+      t==="distribute" ? h("div",{className:"field"},
+        h("label",null,"العيادة"),
+        h("select",{value:dest,onChange:function(e){setDest(e.target.value)}},
+          h("option",{value:""},"— اختر العيادة —"),
+          clinics.map(function(f){ return h("option",{key:f.id,value:f.id},f.name) })
+        )
+      ) : null,
+      h("div",{className:"field"},
+        h("label",null,"الكمية"),
+        h("input",{type:"number",inputMode:"numeric",min:"1",value:qty,onChange:function(e){setQty(e.target.value)}})
+      ),
+      h("div",{className:"field"},
+        h("label",null,conf.noteLabel),
+        h("textarea",{value:note,onChange:function(e){setNote(e.target.value)}})
+      ),
+      h("button",{className:"btn "+conf.cls,disabled:busy,onClick:submit}, busy?"جاري الحفظ…":conf.btn)
+    )
+  );
+}
+
+/* ============================ سجل الحركات ============================ */
+function LogView(props){
+  var txs=props.txs, commodities=props.commodities, facilities=props.facilities;
+  var s1=useState("all"), ft=s1[0], setFt=s1[1];
+  var s2=useState("all"), ff=s2[0], setFf=s2[1];
+  var s3=useState(""), editId=s3[0], setEditId=s3[1];
+  var s4=useState(""), editNote=s4[0], setEditNote=s4[1];
+  var s5=useState(""), noteErr=s5[0], setNoteErr=s5[1];
+
+  function canEdit(x){ return props.isAdmin || x.byUid===props.myUid; }
+  function saveNote(x){
+    db.collection("transactions").doc(x.id).update({note:editNote.trim()})
+      .then(function(){ setEditId(""); setNoteErr(""); })
+      .catch(function(e){ setNoteErr(errMsg(e)) });
+  }
+  var cName={}, fName={};
+  commodities.forEach(function(c){cName[c.id]=c.name});
+  facilities.forEach(function(f){fName[f.id]=f.name});
+
+  var list = txs.filter(function(x){
+    if(ft!=="all" && x.type!==ft) return false;
+    if(ff!=="all" && x.fromId!==ff && x.toId!==ff) return false;
+    return true;
+  });
+
+  function exportCsv(){
+    var rows=[["التاريخ","العملية","الصنف","الكمية","من","إلى","المستخدم","ملاحظة"]];
+    list.forEach(function(x){
+      rows.push([fmtDate(x.tsms),(TX[x.type]||{}).label||x.type,cName[x.commodityId]||"—",x.qty,
+        fName[x.fromId]||"—",fName[x.toId]||"—",x.byName||"—",(x.note||"").replace(/[\n,;]/g," ")]);
+    });
+    var csv="\ufeff"+rows.map(function(r){return r.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"'}).join(",")}).join("\n");
+    var a=document.createElement("a");
+    a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+    a.download="nutstock-"+new Date().toISOString().slice(0,10)+".csv"; a.click();
+  }
+
+  return h("div",null,
+    h("div",{className:"row between",style:{marginBottom:"10px"}},
+      h("h1",null,"الحركات"),
+      props.canExport ? h("button",{className:"iconbtn",onClick:exportCsv},"تصدير CSV") : null
+    ),
+    h("div",{className:"tabs"},
+      h("button",{"data-on":ft==="all"?"1":"0",onClick:function(){setFt("all")}},"الكل"),
+      Object.keys(TX).map(function(k){
+        return h("button",{key:k,"data-on":ft===k?"1":"0",onClick:function(){setFt(k)}},TX[k].label)
+      })
+    ),
+    props.showFacilityFilter ? h("div",{className:"field"},
+      h("select",{value:ff,onChange:function(e){setFf(e.target.value)}},
+        h("option",{value:"all"},"كل المنشآت"),
+        facilities.map(function(f){return h("option",{key:f.id,value:f.id},f.name)})
+      )
+    ) : null,
+    !list.length ? h("div",{className:"empty"},h("b",null,"ما في حركات"),"أول ما تتسجّل حركة بتظهر هون.") :
+    list.map(function(x){
+      var meta = TX[x.type]||{label:x.type,cls:""};
+      var path = x.type==="distribute" ? (fName[x.fromId]||"—")+" ← "+(fName[x.toId]||"—")
+               : x.type==="receive" ? "إلى "+(fName[x.toId]||"—")
+               : x.type==="adjust" ? (fName[x.toId]||"—")
+               : "من "+(fName[x.fromId]||"—");
+      return h("div",{className:"tx",key:x.id},
+        h("div",{className:"l1"},
+          h("div",null,
+            h("div",{className:"nm"},cName[x.commodityId]||"صنف محذوف"),
+            h("span",{className:"pill "+meta.cls,style:{marginTop:"5px"}},meta.label)
+          ),
+          h("div",{className:"q num"}, (meta.sign==="−"?"−":meta.sign==="+"?"+":"")+nf(x.qty))
+        ),
+        h("div",{className:"l2"}, h("span",null,path), h("span",{className:"num"},fmtDate(x.tsms))),
+        editId===x.id
+          ? h("div",{style:{marginTop:"8px"}},
+              noteErr ? h("div",{className:"msg err"},noteErr) : null,
+              h("input",{value:editNote,autoFocus:true,placeholder:"المصدر / رقم البيان / ملاحظة",
+                onChange:function(e){setEditNote(e.target.value)},
+                onKeyDown:function(e){ if(e.key==="Enter") saveNote(x); }}),
+              h("div",{style:{display:"flex",gap:"8px",marginTop:"8px"}},
+                h("button",{className:"btn sm",onClick:function(){saveNote(x)}},"حفظ"),
+                h("button",{className:"btn ghost sm",onClick:function(){setEditId("");setNoteErr("")}},"إلغاء")))
+          : h("div",{className:"l2"},
+              h("span",null,x.byName||"—"),
+              h("span",null,
+                x.note ? x.note+" " : "",
+                canEdit(x) ? h("button",{className:"iconbtn",style:{padding:"2px 8px",fontSize:"11.5px"},
+                  onClick:function(){ setEditId(x.id); setEditNote(x.note||""); setNoteErr(""); }},
+                  x.note?"تعديل البيان":"إضافة بيان") : null))
+      );
+    })
+  );
+}
+
+/* ============================ لوحة الأدمن ============================ */
+function AdminBoard(props){
+  var facilities=props.facilities, commodities=props.commodities, balances=props.balances, txs=props.txs;
+  var s=useState("cards"), view=s[0], setView=s[1];
+  var today = new Date(); today.setHours(0,0,0,0);
+  var todayCount = txs.filter(function(x){return x.tsms>=today.getTime()}).length;
+  var clinics = facilities.filter(function(f){return f.type==="clinic"});
+  var order = facilities.filter(function(f){return f.type==="warehouse"}).concat(clinics);
+
+  return h("div",null,
+    h("h1",null,"الرصيد الكلي"),
+    h("p",{className:"sub"},"كل شي بالمخزن والعيادات، لحظة بلحظة."),
+    h("div",{className:"grid3",style:{marginBottom:"14px"}},
+      h("div",{className:"stat"},h("div",{className:"k"},"أصناف"),h("div",{className:"v num"},nf(commodities.length))),
+      h("div",{className:"stat"},h("div",{className:"k"},"عيادات"),h("div",{className:"v num"},nf(clinics.length))),
+      h("div",{className:"stat"},h("div",{className:"k"},"حركات اليوم"),h("div",{className:"v num"},nf(todayCount)))
+    ),
+    h("div",{className:"tabs"},
+      h("button",{"data-on":view==="cards"?"1":"0",onClick:function(){setView("cards")}},"بطاقات"),
+      h("button",{"data-on":view==="table"?"1":"0",onClick:function(){setView("table")}},"جدول كامل")
+    ),
+    view==="cards"
+      ? h(StockList,{commodities:commodities,balances:balances,facilities:facilities,scope:"all"})
+      : h("div",{className:"tablewrap"},
+          h("table",null,
+            h("thead",null,h("tr",null,
+              h("th",null,"الصنف"),
+              order.map(function(f){return h("th",{key:f.id},f.name)}),
+              h("th",null,"الإجمالي")
+            )),
+            h("tbody",null, commodities.map(function(c){
+              var tot=0;
+              var cells = order.map(function(f){
+                var q=(balances[f.id]||{})[c.id]||0; tot+=q;
+                return h("td",{className:"n",key:f.id},nf(q));
+              });
+              return h("tr",{key:c.id}, h("td",null,c.name), cells, h("td",{className:"n"},h("b",null,nf(tot))));
+            }))
+          )
+        )
+  );
+}
+
+/* ============================ إدارة ============================ */
+function Manage(props){
+  var s=useState("facilities"), sec=s[0], setSec=s[1];
+  return h("div",null,
+    h("h1",null,"الإدارة"),
+    h("p",{className:"sub"},"المنشآت، المستخدمين، والأصناف."),
+    h("div",{className:"tabs"},
+      h("button",{"data-on":sec==="facilities"?"1":"0",onClick:function(){setSec("facilities")}},"المنشآت"),
+      h("button",{"data-on":sec==="users"?"1":"0",onClick:function(){setSec("users")}},"المستخدمين"),
+      h("button",{"data-on":sec==="commodities"?"1":"0",onClick:function(){setSec("commodities")}},"الأصناف"),
+      h("button",{"data-on":sec==="adjust"?"1":"0",onClick:function(){setSec("adjust")}},"تعديل جرد")
+    ),
+    sec==="facilities" ? h(ManageFacilities,props) :
+    sec==="users" ? h(ManageUsers,props) :
+    sec==="commodities" ? h(ManageCommodities,props) :
+    h(AdjustStock,props)
+  );
+}
+
+function ManageFacilities(props){
+  var s1=useState(""), name=s1[0], setName=s1[1];
+  var s2=useState("clinic"), type=s2[0], setType=s2[1];
+  var s3=useState(""), err=s3[0], setErr=s3[1];
+  var s4=useState(false), busy=s4[0], setBusy=s4[1];
+  var s5=useState(""), editId=s5[0], setEditId=s5[1];
+  var s6=useState(""), editName=s6[0], setEditName=s6[1];
+
+  function saveName(f){
+    if(!editName.trim()){ setErr("الاسم ما بصير فاضي"); return; }
+    db.collection("facilities").doc(f.id).update({name:editName.trim()})
+      .then(function(){ setEditId(""); props.toast("تم تغيير الاسم") })
+      .catch(function(e){ setErr(errMsg(e)) });
+  }
+
+  function add(){
+    if(!name.trim()){ setErr("اكتب اسم المنشأة"); return; }
+    setBusy(true); setErr("");
+    db.collection("facilities").add({name:name.trim(),type:type,active:true,createdAt:FieldValue.serverTimestamp()})
+      .then(function(){ setName(""); setBusy(false); props.toast("تمت الإضافة"); })
+      .catch(function(e){ setErr(errMsg(e)); setBusy(false); });
+  }
+  function toggle(f){
+    db.collection("facilities").doc(f.id).update({active: f.active===false})
+      .then(function(){ props.toast(f.active===false?"تم التفعيل":"تم الإيقاف") });
+  }
+  function removeFac(f){
+    var bal = props.balances[f.id]||{};
+    var tot = Object.keys(bal).reduce(function(a,k){ return a+(bal[k]||0) },0);
+    if(tot>0){ alert("ما بنقدر نحذفها — فيها رصيد "+nf(tot)+". انقل الرصيد أو اعمل جرد وصفّره أول."); return; }
+    var assigned = (props.users||[]).filter(function(u){ return u.facilityId===f.id });
+    if(assigned.length){ alert("في مستخدمين مربوطين فيها: "+assigned.map(function(u){return u.name}).join("، ")+". انقلهم أو احذفهم أول."); return; }
+    if(!confirm("حذف نهائي لـ «"+f.name+"»؟ الحركات القديمة بتضل بالسجل.")) return;
+    db.collection("facilities").doc(f.id).delete()
+      .then(function(){ props.toast("تم الحذف") })
+      .catch(function(e){ setErr(errMsg(e)) });
+  }
+  function seed(){
+    if(props.facilities.length || props.allCommodities.length){
+      setErr("النظام مهيّأ من قبل. احذف المكرر يدوياً بدل ما تعيد التهيئة."); return;
+    }
+    if(busy) return;
+    if(!confirm("بدك ننشئ 12 صنف + المخزن + 4 عيادات؟ (بيتم مرة وحدة بس)")) return;
+    setBusy(true);
+    var b = db.batch();
+    SEED_FACILITIES.forEach(function(f){ b.set(db.collection("facilities").doc(), {name:f.name,type:f.type,active:true,createdAt:FieldValue.serverTimestamp()}); });
+    SEED_COMMODITIES.forEach(function(c,i){ b.set(db.collection("commodities").doc(), {name:c.name,unit:c.unit,active:true,order:i}); });
+    b.commit().then(function(){ setBusy(false); props.toast("تمت التهيئة") })
+      .catch(function(e){ setBusy(false); setErr(errMsg(e)) });
+  }
+
+  var empty = !props.facilities.length && !props.allCommodities.length;
+  return h("div",null,
+    empty ? h("div",{className:"card"},
+      h("h2",null,"تهيئة أول مرة"),
+      h("p",{className:"sub"},"بننشئ المخزن الرئيسي + 4 عيادات + الـ12 صنف. بتقدر تعدّل أي اسم بعدين."),
+      h("button",{className:"btn",disabled:busy,onClick:seed}, busy?"جاري…":"تهيئة النظام")) : null,
+    h("div",{className:"card"},
+      h("h2",null,"إضافة منشأة"),
+      err ? h("div",{className:"msg err"},err) : null,
+      h("div",{className:"field"},h("label",null,"الاسم"),
+        h("input",{value:name,onChange:function(e){setName(e.target.value)},placeholder:"مثلاً: عيادة الشجاعية"})),
+      h("div",{className:"field"},h("label",null,"النوع"),
+        h("select",{value:type,onChange:function(e){setType(e.target.value)}},
+          h("option",{value:"clinic"},"عيادة"),
+          h("option",{value:"warehouse"},"مخزن"))),
+      h("button",{className:"btn",disabled:busy,onClick:add},"إضافة")
+    ),
+    props.facilities.map(function(f){
+      if(editId===f.id){
+        return h("div",{className:"card tight",key:f.id},
+          h("div",{className:"field"},
+            h("label",null,"الاسم الجديد"),
+            h("input",{value:editName,autoFocus:true,onChange:function(e){setEditName(e.target.value)},
+              onKeyDown:function(e){ if(e.key==="Enter") saveName(f); }})),
+          h("div",{style:{display:"flex",gap:"8px"}},
+            h("button",{className:"btn sm",onClick:function(){saveName(f)}},"حفظ"),
+            h("button",{className:"btn ghost sm",onClick:function(){setEditId("")}},"إلغاء"))
+        );
+      }
+      return h("div",{className:"card tight",key:f.id},
+        h("div",{className:"row between"},
+          h("div",null,
+            h("div",{style:{fontWeight:600}},f.name),
+            h("span",{className:"pill "+(f.type==="warehouse"?"brand":"info")}, f.type==="warehouse"?"مخزن":"عيادة"),
+            f.active===false ? h("span",{className:"pill danger",style:{marginInlineStart:"6px"}},"موقوفة") : null
+          ),
+          h("div",{style:{display:"flex",flexDirection:"column",gap:"6px",flex:"none"}},
+            h("button",{className:"btn ghost sm",onClick:function(){ setEditId(f.id); setEditName(f.name); }},"تغيير الاسم"),
+            h("button",{className:"btn ghost sm",onClick:function(){toggle(f)}}, f.active===false?"تفعيل":"إيقاف"),
+            h("button",{className:"btn ghost sm",style:{color:"var(--danger)"},onClick:function(){removeFac(f)}},"حذف")
+          )
+        )
+      );
+    })
+  );
+}
+
+function ManageUsers(props){
+  var s1=useState(""), name=s1[0], setName=s1[1];
+  var s2=useState(""), email=s2[0], setEmail=s2[1];
+  var s3=useState(""), pass=s3[0], setPass=s3[1];
+  var s4=useState("clinic"), role=s4[0], setRole=s4[1];
+  var s5=useState(""), fid=s5[0], setFid=s5[1];
+  var s6=useState(""), err=s6[0], setErr=s6[1];
+  var s7=useState(false), busy=s7[0], setBusy=s7[1];
+  var fName={}; props.facilities.forEach(function(f){fName[f.id]=f.name});
+
+  function add(){
+    if(!name.trim()||!email.trim()||!pass){ setErr("كمّل كل الخانات"); return; }
+    if(role!=="admin" && !fid){ setErr("اختر المنشأة التابع لها"); return; }
+    setBusy(true); setErr("");
+    secondaryApp.auth().createUserWithEmailAndPassword(email.trim(), pass)
+      .then(function(cred){
+        return db.collection("users").doc(cred.user.uid).set({
+          name:name.trim(), email:email.trim(), role:role,
+          facilityId: role==="admin" ? null : fid, active:true,
+          createdAt:FieldValue.serverTimestamp()
+        });
+      })
+      .then(function(){ return secondaryApp.auth().signOut(); })
+      .then(function(){ setName(""); setEmail(""); setPass(""); setBusy(false); props.toast("تم إنشاء المستخدم"); })
+      .catch(function(e){ setErr(errMsg(e)); setBusy(false); secondaryApp.auth().signOut(); });
+  }
+  function toggle(u){
+    db.collection("users").doc(u.id).update({active: u.active===false})
+      .then(function(){ props.toast(u.active===false?"تم التفعيل":"تم الإيقاف") });
+  }
+  function resetPass(u){
+    auth.sendPasswordResetEmail(u.email).then(function(){ props.toast("انبعت رابط التغيير على "+u.email) })
+      .catch(function(e){ alert(errMsg(e)) });
+  }
+
+  return h("div",null,
+    h("div",{className:"card"},
+      h("h2",null,"إضافة مستخدم"),
+      err ? h("div",{className:"msg err"},err) : null,
+      h("div",{className:"field"},h("label",null,"الاسم"),h("input",{value:name,onChange:function(e){setName(e.target.value)}})),
+      h("div",{className:"field"},h("label",null,"الإيميل"),h("input",{type:"email",value:email,onChange:function(e){setEmail(e.target.value)}})),
+      h("div",{className:"field"},h("label",null,"كلمة المرور (6 خانات على الأقل)"),h("input",{type:"text",value:pass,onChange:function(e){setPass(e.target.value)}})),
+      h("div",{className:"field"},h("label",null,"الصلاحية"),
+        h("select",{value:role,onChange:function(e){setRole(e.target.value)}},
+          h("option",{value:"clinic"},"عيادة — صرف وإتلاف"),
+          h("option",{value:"warehouse"},"مخزن — وارد وتوزيع"),
+          h("option",{value:"admin"},"أدمن — كل شي"))),
+      role!=="admin" ? h("div",{className:"field"},h("label",null,"المنشأة"),
+        h("select",{value:fid,onChange:function(e){setFid(e.target.value)}},
+          h("option",{value:""},"— اختر —"),
+          props.facilities.filter(function(f){ return role==="admin" || f.type===role })
+            .map(function(f){return h("option",{key:f.id,value:f.id},f.name)}))) : null,
+      h("button",{className:"btn",disabled:busy,onClick:add}, busy?"جاري الإنشاء…":"إنشاء الحساب")
+    ),
+    props.users.map(function(u){
+      return h("div",{className:"card tight",key:u.id},
+        h("div",{className:"row between"},
+          h("div",{style:{minWidth:0}},
+            h("div",{style:{fontWeight:600}},u.name),
+            h("div",{style:{fontSize:"12px",color:"var(--muted)",direction:"ltr",textAlign:"right"}},u.email),
+            h("span",{className:"pill "+(u.role==="admin"?"":u.role==="warehouse"?"brand":"info"),style:{marginTop:"5px"}},
+              ROLE_LABEL[u.role]+(u.facilityId?" · "+(fName[u.facilityId]||"—"):"")),
+            u.active===false ? h("span",{className:"pill danger",style:{marginInlineStart:"6px"}},"موقوف") : null
+          ),
+          h("div",{style:{display:"flex",flexDirection:"column",gap:"6px",flex:"none"}},
+            h("button",{className:"btn ghost sm",onClick:function(){toggle(u)}}, u.active===false?"تفعيل":"إيقاف"),
+            h("button",{className:"btn ghost sm",onClick:function(){resetPass(u)}},"تغيير كلمة المرور")
+          )
+        )
+      );
+    })
+  );
+}
+
+function ManageCommodities(props){
+  var s1=useState(""), name=s1[0], setName=s1[1];
+  var s2=useState("كرتونة"), unit=s2[0], setUnit=s2[1];
+  var s3=useState(""), err=s3[0], setErr=s3[1];
+  var s4=useState(""), editId=s4[0], setEditId=s4[1];
+  var s5=useState(""), editName=s5[0], setEditName=s5[1];
+
+  function saveName(c){
+    if(!editName.trim()){ setErr("الاسم ما بصير فاضي"); return; }
+    db.collection("commodities").doc(c.id).update({name:editName.trim()})
+      .then(function(){ setEditId(""); props.toast("تم تغيير الاسم") })
+      .catch(function(e){ setErr(errMsg(e)) });
+  }
+  function add(){
+    if(!name.trim()){ setErr("اكتب اسم الصنف"); return; }
+    setErr("");
+    db.collection("commodities").add({name:name.trim(),unit:unit.trim()||"وحدة",active:true,order:props.commodities.length})
+      .then(function(){ setName(""); props.toast("تمت الإضافة") })
+      .catch(function(e){ setErr(errMsg(e)) });
+  }
+  function toggle(c){
+    db.collection("commodities").doc(c.id).update({active: c.active===false})
+      .then(function(){ props.toast(c.active===false?"تم التفعيل":"تم الإيقاف") });
+  }
+  function removeCom(c){
+    var tot = 0, b = props.balances||{};
+    Object.keys(b).forEach(function(f){ tot += (b[f][c.id]||0) });
+    if(tot>0){ alert("ما بنقدر نحذفه — عليه رصيد "+nf(tot)+" موزّع. صفّر الرصيد أول أو أوقف الصنف."); return; }
+    if(!confirm("حذف نهائي للصنف «"+c.name+"»؟ الحركات القديمة بتضل بالسجل.")) return;
+    db.collection("commodities").doc(c.id).delete()
+      .then(function(){ props.toast("تم الحذف") })
+      .catch(function(e){ setErr(errMsg(e)) });
+  }
+  return h("div",null,
+    h("div",{className:"card"},
+      h("h2",null,"إضافة صنف"),
+      err ? h("div",{className:"msg err"},err) : null,
+      h("div",{className:"field"},h("label",null,"اسم الصنف"),h("input",{value:name,onChange:function(e){setName(e.target.value)}})),
+      h("div",{className:"field"},h("label",null,"الوحدة"),h("input",{value:unit,onChange:function(e){setUnit(e.target.value)},placeholder:"كرتونة / كيس / شريط"})),
+      h("button",{className:"btn",onClick:add},"إضافة")
+    ),
+    props.allCommodities.map(function(c){
+      if(editId===c.id){
+        return h("div",{className:"card tight",key:c.id},
+          h("div",{className:"field"},
+            h("label",null,"الاسم الجديد"),
+            h("input",{value:editName,autoFocus:true,onChange:function(e){setEditName(e.target.value)},
+              onKeyDown:function(e){ if(e.key==="Enter") saveName(c); }})),
+          h("div",{style:{display:"flex",gap:"8px"}},
+            h("button",{className:"btn sm",onClick:function(){saveName(c)}},"حفظ"),
+            h("button",{className:"btn ghost sm",onClick:function(){setEditId("")}},"إلغاء"))
+        );
+      }
+      return h("div",{className:"card tight",key:c.id},
+        h("div",{className:"row between"},
+          h("div",null,
+            h("div",{style:{fontWeight:600}},c.name),
+            h("span",{style:{fontSize:"12px",color:"var(--muted)"}},"الوحدة: "+c.unit),
+            c.active===false ? h("span",{className:"pill danger",style:{marginInlineStart:"6px"}},"موقوف") : null
+          ),
+          h("div",{style:{display:"flex",flexDirection:"column",gap:"6px",flex:"none"}},
+            h("button",{className:"btn ghost sm",onClick:function(){ setEditId(c.id); setEditName(c.name); }},"تغيير الاسم"),
+            h("button",{className:"btn ghost sm",onClick:function(){toggle(c)}}, c.active===false?"تفعيل":"إيقاف"),
+            h("button",{className:"btn ghost sm",style:{color:"var(--danger)"},onClick:function(){removeCom(c)}},"حذف")
+          )
+        )
+      );
+    })
+  );
+}
+
+function AdjustStock(props){
+  var s1=useState(props.scopeId||""), fid=s1[0], setFid=s1[1];
+  var s2=useState(""), cid=s2[0], setCid=s2[1];
+  var s3=useState(""), qty=s3[0], setQty=s3[1];
+  var s4=useState(""), err=s4[0], setErr=s4[1];
+  var s5=useState(""), note=s5[0], setNote=s5[1];
+  var locked = !!props.scopeId;
+  var cur = (fid && cid) ? ((props.balances[fid]||{})[cid]||0) : null;
+  function save(){
+    if(!fid||!cid||qty===""){ setErr("كمّل كل الخانات"); return; }
+    if(Number(qty)<0){ setErr("الكمية ما بتكون بالسالب"); return; }
+    setErr("");
+    setAbsolute(fid,cid,Number(qty),props.me,note)
+      .then(function(){ setQty(""); setNote(""); props.toast("تم تعديل الرصيد") })
+      .catch(function(e){ setErr(errMsg(e)) });
+  }
+  return h("div",{className:"card"},
+    h("h2",null,"تعديل جرد"),
+    h("p",{className:"sub"},"للجرد الفعلي أو تصحيح خطأ بالكمية. بينحفظ بالسجل باسمك."),
+    err ? h("div",{className:"msg err"},err) : null,
+    !locked ? h("div",{className:"field"},h("label",null,"المنشأة"),
+      h("select",{value:fid,onChange:function(e){setFid(e.target.value)}},
+        h("option",{value:""},"— اختر —"),
+        props.facilities.map(function(f){return h("option",{key:f.id,value:f.id},f.name)}))) : null,
+    h("div",{className:"field"},h("label",null,"الصنف"),
+      h("select",{value:cid,onChange:function(e){setCid(e.target.value)}},
+        h("option",{value:""},"— اختر —"),
+        props.commodities.map(function(c){return h("option",{key:c.id,value:c.id},c.name)}))),
+    cur!==null ? h("p",{style:{margin:"-4px 2px 10px",fontSize:"12.5px",color:"var(--muted)"}},
+      "الرصيد الحالي: ",h("b",{className:"num"},nf(cur))) : null,
+    h("div",{className:"field"},h("label",null,"الرصيد الجديد"),
+      h("input",{type:"number",inputMode:"numeric",min:"0",value:qty,onChange:function(e){setQty(e.target.value)}})),
+    h("div",{className:"field"},h("label",null,"السبب / المصدر / رقم البيان"),
+      h("textarea",{value:note,onChange:function(e){setNote(e.target.value)}})),
+    h("button",{className:"btn warn",onClick:save},"حفظ التعديل")
+  );
+}
+
+/* ============================ التطبيق ============================ */
+function App(){
+  var a1=useState(undefined), authUser=a1[0], setAuthUser=a1[1];
+  var a2=useState(null), profile=a2[0], setProfile=a2[1];
+  var a3=useState(""), gate=a3[0], setGate=a3[1];
+  var a4=useState([]), facilities=a4[0], setFacilities=a4[1];
+  var a5=useState([]), allCommodities=a5[0], setAllCommodities=a5[1];
+  var a6=useState([]), stock=a6[0], setStock=a6[1];
+  var a7=useState([]), txs=a7[0], setTxs=a7[1];
+  var a8=useState([]), users=a8[0], setUsers=a8[1];
+  var a9=useState(""), tab=a9[0], setTab=a9[1];
+  var a10=useState(""), toastMsg=a10[0], setToastMsg=a10[1];
+
+  function toast(m){ setToastMsg(m); setTimeout(function(){ setToastMsg("") }, 2600); }
+
+  useEffect(function(){
+    return auth.onAuthStateChanged(function(u){
+      setAuthUser(u||null);
+      if(!u){ setProfile(null); setGate(""); setTab(""); }
+    });
+  },[]);
+
+  useEffect(function(){
+    if(!authUser) return;
+    var ref = db.collection("users").doc(authUser.uid);
+    return ref.onSnapshot(function(snap){
+      if(!snap.exists){
+        if((authUser.email||"").toLowerCase() === ADMIN_EMAIL.toLowerCase()){
+          ref.set({name:"د. أسامة اللباد",email:authUser.email,role:"admin",facilityId:null,active:true,
+                   createdAt:FieldValue.serverTimestamp()});
+        } else {
+          setGate("حسابك مش مربوط بأي منشأة. تواصل مع الأدمن.");
+        }
+        return;
+      }
+      var p = snap.data(); p.id = snap.id;
+      if(p.active===false){ setGate("حسابك موقوف حالياً. تواصل مع الأدمن."); setProfile(null); return; }
+      setGate(""); setProfile(p);
+      setTab(function(t){ return t || (p.role==="admin" ? "board" : "stock"); });
+    }, function(e){ setGate(errMsg(e)); });
+  },[authUser]);
+
+  useEffect(function(){
+    if(!profile) return;
+    var un=[];
+    un.push(db.collection("facilities").onSnapshot(function(s){
+      setFacilities(s.docs.map(function(d){ var o=d.data(); o.id=d.id; return o; })
+        .sort(function(a,b){ return (a.type===b.type)? a.name.localeCompare(b.name,"ar") : (a.type==="warehouse"?-1:1) }));
+    }));
+    un.push(db.collection("commodities").onSnapshot(function(s){
+      setAllCommodities(s.docs.map(function(d){ var o=d.data(); o.id=d.id; return o; })
+        .sort(function(a,b){ return (a.order||0)-(b.order||0) }));
+    }));
+    un.push(db.collection("stock").onSnapshot(function(s){
+      setStock(s.docs.map(function(d){ return d.data(); }));
+    }));
+    un.push(db.collection("transactions").orderBy("tsms","desc").limit(400).onSnapshot(function(s){
+      setTxs(s.docs.map(function(d){ var o=d.data(); o.id=d.id; return o; }));
+    }));
+    if(profile.role==="admin"){
+      un.push(db.collection("users").onSnapshot(function(s){
+        setUsers(s.docs.map(function(d){ var o=d.data(); o.id=d.id; return o; }));
+      }));
+    }
+    return function(){ un.forEach(function(f){ f&&f() }) };
+  },[profile && profile.id, profile && profile.role]);
+
+  var balances = useMemo(function(){
+    var m={};
+    stock.forEach(function(s){
+      if(!s.facilityId||!s.commodityId) return;
+      if(!m[s.facilityId]) m[s.facilityId]={};
+      m[s.facilityId][s.commodityId]=s.qty||0;
+    });
+    return m;
+  },[stock]);
+
+  var commodities = useMemo(function(){
+    return allCommodities.filter(function(c){ return c.active!==false });
+  },[allCommodities]);
+
+  if(authUser===undefined) return h("div",{className:"spin"});
+  if(!authUser) return h(Login);
+  if(gate) return h("div",{className:"login"},h("div",{className:"box"},
+    h("div",{className:"card center"},
+      h("p",{style:{margin:"0 0 14px"}},gate),
+      h("button",{className:"btn ghost",onClick:function(){auth.signOut()}},"خروج"))));
+  if(!profile) return h("div",{className:"spin"});
+
+  var myFacility = facilities.filter(function(f){ return f.id===profile.facilityId })[0];
+  var me = {uid:profile.id, name:profile.name};
+  var myTxs = profile.role==="admin" ? txs : txs.filter(function(x){
+    return x.fromId===profile.facilityId || x.toId===profile.facilityId;
+  });
+  var shared = {facilities:facilities, commodities:commodities, allCommodities:allCommodities,
+                balances:balances, users:users, me:me, toast:toast};
+
+  var navs = profile.role==="admin"
+    ? [{k:"board",ic:"▦",t:"الرصيد"},{k:"log",ic:"≡",t:"الحركات"},{k:"manage",ic:"⚙",t:"الإدارة"}]
+    : profile.role==="warehouse"
+    ? [{k:"stock",ic:"▦",t:"رصيدي"},{k:"receive",ic:"↓",t:"وارد"},{k:"distribute",ic:"→",t:"توزيع"},
+       {k:"damage",ic:"✕",t:"إتلاف"},{k:"adjust",ic:"⇄",t:"جرد"},{k:"log",ic:"≡",t:"الحركات"}]
+    : [{k:"stock",ic:"▦",t:"رصيدي"},{k:"dispense",ic:"↑",t:"صرف"},{k:"damage",ic:"✕",t:"إتلاف"},
+       {k:"adjust",ic:"⇄",t:"جرد"},{k:"log",ic:"≡",t:"الحركات"}];
+
+  var body;
+  if(tab==="board") body = h(AdminBoard,{facilities:facilities,commodities:commodities,balances:balances,txs:txs});
+  else if(tab==="manage") body = h(Manage,shared);
+  else if(tab==="log") body = h(LogView,{txs:myTxs,commodities:allCommodities,facilities:facilities,
+      canExport:profile.role==="admin", showFacilityFilter:profile.role==="admin",
+      isAdmin:profile.role==="admin", myUid:profile.id});
+  else if(tab==="stock") body = h("div",null,
+      h("h1",null,"رصيد "+((myFacility&&myFacility.name)||"—")),
+      h("p",{className:"sub"},"الأرقام بتتحدّث تلقائياً مع كل حركة."),
+      h(StockList,{commodities:commodities,balances:balances,facilities:facilities,scope:profile.facilityId}));
+  else if(tab==="adjust") body = h("div",null,
+      h("h1",null,"تعديل جرد"),
+      h(AdjustStock,{facilities:facilities,commodities:commodities,balances:balances,
+        me:me,toast:toast,scopeId:profile.facilityId}));
+  else if(tab==="receive"||tab==="distribute"||tab==="dispense"||tab==="damage")
+    body = h(MoveForm,{type:tab,fromId:profile.facilityId,commodities:commodities,facilities:facilities,
+      balances:balances,me:me,onDone:function(m){ toast(m); setTab("stock"); }});
+  else body = null;
+
+  return h("div",{className:"app"},
+    h("div",{className:"topbar"},
+      h("div",{className:"brandmark"},"NS"),
+      h("div",{className:"who"},
+        h("b",null,profile.name),
+        h("span",null, ROLE_LABEL[profile.role] + (myFacility? " · "+myFacility.name : ""))),
+      h("button",{className:"iconbtn",onClick:function(){ if(confirm("بدك تطلع من الحساب؟")) auth.signOut(); }},"خروج")
+    ),
+    h("div",{className:"page"}, body),
+    h("div",{className:"nav"}, h("div",{className:"nav-in"}, navs.map(function(n){
+      return h("button",{key:n.k,"data-on":tab===n.k?"1":"0",onClick:function(){setTab(n.k)}},
+        h("span",{className:"ic"},n.ic), h("span",null,n.t));
+    }))),
+    toastMsg ? h("div",{className:"toast"},toastMsg) : null
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(h(App));
+</script>
+</body>
+</html>
